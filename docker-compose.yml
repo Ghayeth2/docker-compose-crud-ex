@@ -1,7 +1,106 @@
-version: "3.4"
+## The recommended approach from docker is to introduce custom networks for our services
+## instead of using default docker network
+#
+#services:
+#  redis:
+#    networks:
+#      - spring-app
+#    container_name: redis-server
+#    image: redis:alpine
+#    restart: always
+#    ports:
+#      - "6379:6379"
+#
+#
+#  # How to create my database for this container and my app
+#  mysql:
+#    image: mysql
+#    networks:
+#      - spring-app
+#    healthcheck:
+#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+#      interval: 10s   # Check every 10 seconds
+#      timeout: 5s     # Timeout after 5 seconds
+#      retries: 5      # Retry 5 times before marking as unhealthy
+#    environment:
+#      MYSQL_ROOT_PASSWORD: XyzRR12aQRyzen
+#      MYSQL_DATABASE: docker_crud
+#    volumes:
+#      - mysql-db:/var/lib/mysql
+#    ports:
+#      - "3307:3306"
+#
+#
+#  # My app image
+#  spring-crud:
+#    networks:
+#      - spring-app
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+#    restart: always
+#    build: .
+#    image: ghayeth/crud-app
+#    ports:
+#      - "3000:3000"
+#      - "90:3000"
+#
+#networks:
+#  spring-app:
+#    name: crud-app
+#
+#volumes:
+#  mysql-db:
 
 services:
   redis:
+    networks:
+      - spring-app
+    container_name: redis-server
     image: redis:alpine
+    restart: always
     ports:
-      - 6379:6379
+      - "6379:6379"
+
+  mysql:
+    image: mysql
+    networks:
+      - spring-app
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      MYSQL_ROOT_PASSWORD: XyzRR12aQRyzen
+      MYSQL_DATABASE: docker_crud
+    volumes:
+      - mysql-db:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+  spring-crud:
+    networks:
+      - spring-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/docker_crud
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: XyzRR12aQRyzen
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    restart: always
+    build: .
+    image: ghayeth/crud-app
+    ports:
+      - "3000:3000"
+      - "90:3000"
+
+networks:
+  spring-app:
+    name: crud-app
+
+volumes:
+  mysql-db:
